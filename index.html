@@ -1,0 +1,319 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2566">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
+    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Hiragino Mincho ProN'; -webkit-text-stroke: #000000}
+    span.s1 {font-kerning: none}
+    span.s2 {font: 12.0px Times; font-kerning: none}
+    span.s3 {font: 12.0px 'Hiragino Mincho ProN'; font-kerning: none}
+  </style>
+</head>
+<body>
+<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;head&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;Stickman Cactus &amp; Knife Runner&lt;/title&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>margin: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>text-align: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>background: #fff;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>touch-action: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>-webkit-user-select: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>user-select: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>font-family: sans-serif;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>canvas {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>border: 2px solid #000;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>background: #fff;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>margin-top: 10px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>max-width: 95%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>height: auto;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;body&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;canvas id="gameCanvas" width="480" height="200"&gt;&lt;/canvas&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const canvas = document.getElementById('gameCanvas');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const ctx = canvas.getContext('2d');</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">    </span>// </span><span class="s1">プレイヤー（棒人間）状態</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let player = {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>x: 60,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>y: 160,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>dy: 0,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>gravity: 0.5,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>firstJumpPower: -9,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>secondJumpPower: -10,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>isGrounded: false,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>jumpCount: 0,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>maxJumps: 2,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>runFrame: 0</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>};</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let obstacles = [];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let frame = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let score = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let highScore = localStorage.getItem('stickman_cactus_highscore') || 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let gameOver = false;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// </span><span class="s3">棒人間描画</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function drawPlayer() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.strokeStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineWidth = 2;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineCap = 'round';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineJoin = 'round';</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let headX = player.x;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let headY = player.y - 30;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// </span><span class="s3">頭</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.arc(headX, headY, 7, 0, Math.PI * 2);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.stroke();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// </span><span class="s3">体</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.moveTo(headX, headY + 7);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineTo(headX, player.y - 8);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.stroke();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (player.isGrounded) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.runFrame += 0.25;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let legAngle = Math.sin(player.runFrame) * 12;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let armAngle = Math.sin(player.runFrame) * 10;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// </span><span class="s3">脚</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, player.y - 8);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX - legAngle, player.y);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, player.y - 8);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX + legAngle, player.y);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.stroke();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// </span><span class="s3">腕</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, headY + 12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX + armAngle, headY + 20);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, headY + 12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX - armAngle, headY + 20);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.stroke();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// </span><span class="s3">ジャンプポーズ</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, player.y - 8);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX - 6, player.y - 2);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX - 10, player.y + 4);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, player.y - 8);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX + 6, player.y - 4);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX + 8, player.y + 2);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.stroke();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, headY + 12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX - 10, headY + 5);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.moveTo(headX, headY + 12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.lineTo(headX + 10, headY + 5);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.stroke();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// </span><span class="s3">サボテン描画</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function drawCactus(obs) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.strokeStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineWidth = 2;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillRect(obs.x + obs.w * 0.35, obs.y, obs.w * 0.3, obs.h);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (obs.h &gt;= 25) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillRect(obs.x, obs.y + obs.h * 0.3, obs.w * 0.4, obs.h * 0.12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillRect(obs.x, obs.y + obs.h * 0.15, obs.w * 0.12, obs.h * 0.25);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillRect(obs.x + obs.w * 0.6, obs.y + obs.h * 0.45, obs.w * 0.4, obs.h * 0.12);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillRect(obs.x + obs.w * 0.88, obs.y + obs.h * 0.25, obs.w * 0.12, obs.h * 0.25);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">    </span>// </span><span class="s1">飛んでくるナイフ描画関数</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function drawKnife(obs) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.strokeStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineWidth = 1.5;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let x = obs.x;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let y = obs.y;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">      </span>// </span><span class="s1">刃（左向きの鋭い形状）</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.moveTo(x, y + 6);<span class="Apple-converted-space">                  </span>// </span><span class="s3">刃先（一番左）</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineTo(x + 18, y + 1); <span class="Apple-converted-space">            </span>// </span><span class="s3">刃の背</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineTo(x + 18, y + 11);<span class="Apple-converted-space">            </span>// </span><span class="s3">刃の腹（鍔）</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.closePath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fill();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// </span><span class="s3">持ち手（柄）</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillRect(x + 18, y + 4, 8, 4);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// </span><span class="s3">柄頭</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillRect(x + 26, y + 3, 2, 6);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function update() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (gameOver) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>frame++;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>player.dy += player.gravity;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>player.y += player.dy;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (player.y &gt;= 160) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.y = 160;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.dy = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.isGrounded = true;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.jumpCount = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let gameSpeed = 5 + Math.floor(score / 5) * 0.6;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let spawnInterval = Math.max(50, 95 - Math.floor(score / 4) * 4);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (frame % spawnInterval === 0) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let isKnife = score &gt;= 5 &amp;&amp; Math.random() &lt; 0.35;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (isKnife) {</span></p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">          </span>// </span><span class="s1">ナイフ（高度</span><span class="s2">2</span><span class="s1">パターン：ジャンプで避ける</span><span class="s2"> / </span><span class="s1">しゃがむかそのまま通過）</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>let knifeY = Math.random() &lt; 0.5 ? 90 : 115;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>obstacles.push({ x: canvas.width, y: knifeY, w: 28, h: 12, type: 'knife' });</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>// </span><span class="s3">サボテン</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>let cactusType = Math.random();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>let h, w;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (cactusType &lt; 0.3) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>h = 45; w = 24;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>} else if (cactusType &lt; 0.7) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>h = 32; w = 20;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>h = 22; w = 16;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>obstacles.push({ x: canvas.width, y: 160 - h, w: w, h: h, type: 'cactus' });</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>for (let i = obstacles.length - 1; i &gt;= 0; i--) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>obstacles[i].x -= gameSpeed;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let pLeft = player.x - 6;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let pRight = player.x + 6;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let pTop = player.y - 35;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let pBottom = player.y;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let oLeft = obstacles[i].x;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let oRight = obstacles[i].x + obstacles[i].w;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let oTop = obstacles[i].y;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>let oBottom = obstacles[i].y + obstacles[i].h;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (pRight &gt; oLeft &amp;&amp; pLeft &lt; oRight &amp;&amp; pBottom &gt; oTop &amp;&amp; pTop &lt; oBottom) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>gameOver = true;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (score &gt; highScore) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>highScore = score;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>localStorage.setItem('stickman_cactus_highscore', highScore);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (obstacles[i].x &lt; -30) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>obstacles.splice(i, 1);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>score++;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function draw() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.clearRect(0, 0, canvas.width, canvas.height);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// </span><span class="s3">地面</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.strokeStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineWidth = 2;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.beginPath();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.moveTo(0, 160);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.lineTo(canvas.width, 160);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.stroke();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>drawPlayer();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>obstacles.forEach(obs =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (obs.type === 'knife') {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>drawKnife(obs);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>drawCactus(obs);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// UI</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.font = "bold 14px sans-serif";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillText("SCORE: " + score, 10, 25);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillText("HI-SCORE: " + highScore, 130, 25);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let remainingJumps = player.maxJumps - player.jumpCount;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.font = "12px sans-serif";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>ctx.fillText("JUMP: " + "</span><span class="s3">★</span><span class="s1">".repeat(remainingJumps), 380, 25);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (gameOver) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillRect(0, 0, canvas.width, canvas.height);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillStyle = '#000';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.font = "bold 22px sans-serif";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillText("GAME OVER", 170, 80);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.font = "15px sans-serif";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillText("Score: " + score + "<span class="Apple-converted-space">  </span>(Best: " + highScore + ")", 160, 110);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx.fillText("Tap to Restart", 185, 145);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function loop() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>update();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>draw();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>requestAnimationFrame(loop);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function handleAction(e) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (e) e.preventDefault();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (gameOver) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>obstacles = [];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>score = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>frame = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.y = 160;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.dy = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.isGrounded = true;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>player.jumpCount = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>gameOver = false;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (player.jumpCount &lt; player.maxJumps) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>player.dy = (player.jumpCount === 0) ? player.firstJumpPower : player.secondJumpPower;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>player.isGrounded = false;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>player.jumpCount++;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>canvas.addEventListener('pointerdown', handleAction, { passive: false });</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>window.addEventListener('keydown', (e) =&gt; { if (e.code === 'Space') handleAction(e); });</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>loop();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+</body>
+</html>
