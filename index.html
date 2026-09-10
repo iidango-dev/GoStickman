@@ -222,28 +222,31 @@
     let highScore = localStorage.getItem('stickman_runner_highscore') || 0;
 
     // 関節つき肢（腕・脚）を描画する補助関数
-    function drawLimb(startX, startY, angle1, len1, angle2, len2) {
-      // 大腿 / 上腕の先端（膝 / 肘）
-      let kneeX = startX + Math.sin(angle1) * len1;
-      let kneeY = startY + Math.cos(angle1) * len1;
+    // x, y: 付け根座標
+    // rot1: 大腿/上腕の角度（正が前方）
+    // len1: 腿/上腕の長さ
+    // rot2: 膝/肘の曲がり角度（正が後ろへ曲げる）
+    // len2: 脛/前腕の長さ
+    function drawLimb(x, y, rot1, len1, rot2, len2) {
+      // 進行方向（右）を基準とした座標計算
+      let kneeX = x + Math.sin(rot1) * len1;
+      let kneeY = y + Math.cos(rot1) * len1;
 
-      // 下腿 / 前腕の先端（足首 / 手首）
-      let footX = kneeX + Math.sin(angle1 + angle2) * len2;
-      let footY = kneeY + Math.cos(angle1 + angle2) * len2;
+      let footX = kneeX + Math.sin(rot1 - rot2) * len2;
+      let footY = kneeY + Math.cos(rot1 - rot2) * len2;
 
       ctx.beginPath();
-      ctx.moveTo(startX, startY);
+      ctx.moveTo(x, y);
       ctx.lineTo(kneeX, kneeY);
       ctx.lineTo(footX, footY);
       ctx.stroke();
 
-      // 関節の小さなポッチ（リアルな接地感）
       ctx.beginPath();
       ctx.arc(kneeX, kneeY, 1.2, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 関節（肘・膝）つき棒人間描画関数
+    // 関節つき棒人間描画関数（前走り動作修正版）
     function drawStickman(x, y, runFrame, isGrounded, dir = 1) {
       ctx.save();
       ctx.translate(x, y);
@@ -255,11 +258,15 @@
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
+      // 前傾姿勢をつけて躍動感を出す
+      let lean = isGrounded ? 0.15 : 0.05;
+      ctx.rotate(lean);
+
       let headX = 0;
       let headY = -32;
-      let hipX = 0;
+      let hipX = -2;
       let hipY = -12;
-      let shoulderX = 0;
+      let shoulderX = 1;
       let shoulderY = -24;
 
       // 頭
@@ -274,38 +281,39 @@
       ctx.stroke();
 
       if (isGrounded) {
-        // 関節アニメーション（位相を計算して自然な折り曲げ）
-        let phase = runFrame;
+        // 正しい前走りアニメーションの位相制御
+        let sinVal = Math.sin(runFrame);
+        let cosVal = Math.cos(runFrame);
 
-        // 脚の角度計算
-        let legAngleL1 = Math.sin(phase) * 0.75;
-        let legAngleL2 = Math.max(0, Math.sin(phase - 0.6) * 0.9); // ひざ下は引き上げる際に曲げる
+        // 脚（正の角度＝前方に振り出し）
+        let legRotR = sinVal * 0.7; 
+        let kneeBendR = (sinVal < 0) ? -sinVal * 1.1 : 0.1; // 後ろへ蹴り上げて前に戻す時に膝を曲げる
 
-        let legAngleR1 = Math.sin(phase + Math.PI) * 0.75;
-        let legAngleR2 = Math.max(0, Math.sin(phase + Math.PI - 0.6) * 0.9);
+        let legRotL = -sinVal * 0.7;
+        let kneeBendL = (sinVal > 0) ? sinVal * 1.1 : 0.1;
 
-        // 腕の角度計算（足と逆位相）
-        let armAngleL1 = Math.sin(phase + Math.PI) * 0.65;
-        let armAngleL2 = -Math.abs(Math.sin(phase + Math.PI)) * 0.5 - 0.2; // 肘は自然に内側に曲げる
+        // 腕（足と逆位相で振る）
+        let armRotR = -sinVal * 0.65;
+        let elbowBendR = 0.5 + Math.abs(sinVal) * 0.3; // 肘は常に軽く前に曲げる
 
-        let armAngleR1 = Math.sin(phase) * 0.65;
-        let armAngleR2 = -Math.abs(Math.sin(phase)) * 0.5 - 0.2;
+        let armRotL = sinVal * 0.65;
+        let elbowBendL = 0.5 + Math.abs(sinVal) * 0.3;
 
-        // 奥の腕・脚
-        drawLimb(shoulderX, shoulderY, armAngleL1, 8, armAngleL2, 8);
-        drawLimb(hipX, hipY, legAngleL1, 8, legAngleL2, 8);
+        // 奥側の手足を先に描画
+        drawLimb(shoulderX, shoulderY, armRotL, 7, elbowBendL, 7);
+        drawLimb(hipX, hipY, legRotL, 8, kneeBendL, 8);
 
-        // 手前の腕・脚
-        drawLimb(hipX, hipY, legAngleR1, 8, legAngleR2, 8);
-        drawLimb(shoulderX, shoulderY, armAngleR1, 8, armAngleR2, 8);
+        // 手前側の手足
+        drawLimb(hipX, hipY, legRotR, 8, kneeBendR, 8);
+        drawLimb(shoulderX, shoulderY, armRotR, 7, elbowBendR, 7);
 
       } else {
-        // ジャンプポーズ（膝と肘を軽く曲げて滞空）
-        drawLimb(hipX, hipY, -0.6, 8, 1.0, 7); // 前脚
-        drawLimb(hipX, hipY, 0.5, 8, 0.4, 7);  // 後ろ脚
+        // 前進ジャンプのポーズ
+        drawLimb(hipX, hipY, 0.6, 8, 0.8, 8);   // 前脚（前に出して曲げる）
+        drawLimb(hipX, hipY, -0.7, 8, 0.3, 8);  // 後ろ脚（後ろへ伸ばす）
 
-        drawLimb(shoulderX, shoulderY, -1.2, 7, -0.6, 7); // 前腕
-        drawLimb(shoulderX, shoulderY, 1.0, 7, -0.8, 7);  // 後ろ腕
+        drawLimb(shoulderX, shoulderY, -0.8, 7, 0.6, 7); // 前腕
+        drawLimb(shoulderX, shoulderY, 0.7, 7, 0.6, 7);  // 後ろ腕
       }
 
       ctx.restore();
@@ -445,17 +453,14 @@
       startGameBGM();
       frame++;
 
-      // スコア10毎のスクロール速度の計算
-      // スタート時: 3.0 (さらにゆったり)
-      // スコア10ごとに +0.8 増加 (3.0, 3.8, 4.6, 5.4...)
+      // スコア10毎のスクロール速度の計算 (初期値: 3.0, 10毎に+0.8)
       let speedLevel = Math.floor(score / 10);
       let gameSpeed = 3.0 + speedLevel * 0.8;
 
-      // スクロールスピードに連動してBGMのテンポ（間隔ms）を加速させる
-      // 初期値: 125ms -> スピードアップに従い徐々に短縮（最小55ms）
+      // スクロールスピードに連動してBGMのテンポを加速
       currentBgmInterval = Math.max(55, 125 - speedLevel * 10);
 
-      // 走りアニメーションの足の動きもスクロールスピードに完全同期
+      // 走りアニメーションの速度同期
       if (player.isGrounded) {
         player.runFrame += gameSpeed * 0.055;
       }
@@ -481,7 +486,6 @@
         triggerGameOver();
       }
 
-      // スピードに合わせて障害物の出現頻度も調整
       let spawnInterval = Math.max(40, Math.floor(115 - speedLevel * 9));
 
       if (frame % spawnInterval === 0) {
@@ -573,7 +577,7 @@
         ctx.lineTo(V_WIDTH, GROUND_Y);
         ctx.stroke();
 
-        // 関節つき棒人間描画
+        // 棒人間描画
         let isGrounded = titleStickman.y >= GROUND_Y;
         drawStickman(titleStickman.x, titleStickman.y, titleStickman.runFrame, isGrounded, titleStickman.dir);
 
@@ -635,7 +639,7 @@
       }
       ctx.stroke();
 
-      // 関節つきプレイヤー描画
+      // プレイヤー描画
       drawStickman(player.x, player.y, player.runFrame, player.isGrounded, 1);
 
       obstacles.forEach(obs => {
@@ -653,7 +657,6 @@
       let scoreText = "SCORE: " + score;
       ctx.fillText(scoreText, 10, 25);
 
-      // スコア10毎に黒色の王冠アイコンを表示
       if (score > 0 && score % 10 === 0) {
         let textWidth = ctx.measureText(scoreText).width;
         drawCrownIcon(10 + textWidth + 16, 20);
