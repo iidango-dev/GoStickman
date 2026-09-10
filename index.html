@@ -124,20 +124,37 @@
       isFallingInHole: false
     };
 
+    // オープニングアニメーション用棒人間状態
+    let titleStickman = {
+      x: 140,
+      y: GROUND_Y,
+      dy: 0,
+      dir: 1, // 1: 右, -1: 左
+      speed: 1.8,
+      minX: 120,
+      maxX: 360,
+      runFrame: 0,
+      jumpTimer: 0
+    };
+
     let obstacles = [];
     let frame = 0;
     let score = 0;
     let highScore = localStorage.getItem('stickman_runner_highscore') || 0;
 
-    // 棒人間描画
-    function drawPlayer() {
+    // 棒人間描画関数
+    function drawStickman(x, y, runFrame, isGrounded, dir = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(dir, 1); // 左右向き反転
+
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      let headX = player.x;
-      let headY = player.y - 30;
+      let headX = 0;
+      let headY = -30;
 
       // 頭
       ctx.beginPath();
@@ -147,20 +164,19 @@
       // 体
       ctx.beginPath();
       ctx.moveTo(headX, headY + 7);
-      ctx.lineTo(headX, player.y - 8);
+      ctx.lineTo(headX, -8);
       ctx.stroke();
 
-      if (player.isGrounded) {
-        player.runFrame += 0.25;
-        let legAngle = Math.sin(player.runFrame) * 12;
-        let armAngle = Math.sin(player.runFrame) * 10;
+      if (isGrounded) {
+        let legAngle = Math.sin(runFrame) * 12;
+        let armAngle = Math.sin(runFrame) * 10;
 
         // 脚
         ctx.beginPath();
-        ctx.moveTo(headX, player.y - 8);
-        ctx.lineTo(headX - legAngle, player.y);
-        ctx.moveTo(headX, player.y - 8);
-        ctx.lineTo(headX + legAngle, player.y);
+        ctx.moveTo(headX, -8);
+        ctx.lineTo(headX - legAngle, 0);
+        ctx.moveTo(headX, -8);
+        ctx.lineTo(headX + legAngle, 0);
         ctx.stroke();
 
         // 腕
@@ -173,13 +189,13 @@
       } else {
         // ジャンプポーズ
         ctx.beginPath();
-        ctx.moveTo(headX, player.y - 8);
-        ctx.lineTo(headX - 6, player.y - 2);
-        ctx.lineTo(headX - 10, player.y + 4);
+        ctx.moveTo(headX, -8);
+        ctx.lineTo(headX - 6, -2);
+        ctx.lineTo(headX - 10, 4);
 
-        ctx.moveTo(headX, player.y - 8);
-        ctx.lineTo(headX + 6, player.y - 4);
-        ctx.lineTo(headX + 8, player.y + 2);
+        ctx.moveTo(headX, -8);
+        ctx.lineTo(headX + 6, -4);
+        ctx.lineTo(headX + 8, 2);
         ctx.stroke();
 
         ctx.beginPath();
@@ -189,9 +205,11 @@
         ctx.lineTo(headX + 10, headY + 5);
         ctx.stroke();
       }
+
+      ctx.restore();
     }
 
-    // サボテン描画（3種類対応）
+    // サボテン描画
     function drawCactus(obs) {
       ctx.fillStyle = '#000';
       ctx.fillRect(obs.x + obs.w * 0.35, obs.y, obs.w * 0.3, obs.h);
@@ -205,7 +223,7 @@
       }
     }
 
-    // 小さくなった回転ナイフ描画
+    // さらに小型化された回転ナイフ描画（サイズ 15 x 6）
     function drawRotatingKnife(obs) {
       ctx.save();
       let centerX = obs.x + obs.w / 2;
@@ -214,34 +232,60 @@
       ctx.translate(centerX, centerY);
       ctx.rotate(obs.angle);
 
-      let grad = ctx.createLinearGradient(-10, -4, -10, 4);
+      let grad = ctx.createLinearGradient(-7, -3, -7, 3);
       grad.addColorStop(0, '#e0e0e0');
       grad.addColorStop(0.5, '#ffffff');
-      grad.addColorStop(1, '#999999');
+      grad.addColorStop(1, '#888888');
 
       ctx.fillStyle = grad;
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 0.8;
 
-      // 小型化した刃身
+      // 刃身
       ctx.beginPath();
-      ctx.moveTo(10, 4);
-      ctx.lineTo(-3, -4);
-      ctx.lineTo(-10, -4);
-      ctx.lineTo(-10, 4);
+      ctx.moveTo(7, 3);
+      ctx.lineTo(-2, -3);
+      ctx.lineTo(-7, -3);
+      ctx.lineTo(-7, 3);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      // 柄
-      ctx.fillStyle = '#222';
-      ctx.fillRect(-18, -3, 8, 6);
+      // 柄（持ち手）
+      ctx.fillStyle = '#111';
+      ctx.fillRect(-13, -2, 6, 4);
 
-      // びょう
-      ctx.fillStyle = '#ccc';
+      ctx.restore();
+    }
+
+    // 全体のモノクロトーンに合わせた線の「拍手」アイコンを描画
+    function drawLineClapIcon(x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+
+      // 左手
       ctx.beginPath();
-      ctx.arc(-15, 0, 0.9, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(-6, 3);
+      ctx.lineTo(-2, -3);
+      ctx.lineTo(0, -1);
+      ctx.stroke();
+
+      // 右手
+      ctx.beginPath();
+      ctx.moveTo(6, 3);
+      ctx.lineTo(2, -3);
+      ctx.lineTo(0, -1);
+      ctx.stroke();
+
+      // 拍手線の演出 (パチパチ線)
+      ctx.beginPath();
+      ctx.moveTo(0, -6); ctx.lineTo(0, -9);
+      ctx.moveTo(-4, -5); ctx.lineTo(-6, -7);
+      ctx.moveTo(4, -5); ctx.lineTo(6, -7);
+      ctx.stroke();
 
       ctx.restore();
     }
@@ -259,6 +303,35 @@
     }
 
     function update() {
+      if (gameState === 'title') {
+        // オープニング棒人間の左右走りとジャンプ更新
+        titleStickman.x += titleStickman.speed * titleStickman.dir;
+        titleStickman.runFrame += 0.2;
+
+        if (titleStickman.x > titleStickman.maxX) {
+          titleStickman.x = titleStickman.maxX;
+          titleStickman.dir = -1;
+        } else if (titleStickman.x < titleStickman.minX) {
+          titleStickman.x = titleStickman.minX;
+          titleStickman.dir = 1;
+        }
+
+        // 定期的ピョンピョンジャンプ
+        titleStickman.jumpTimer++;
+        if (titleStickman.jumpTimer % 45 === 0 && titleStickman.y >= GROUND_Y) {
+          titleStickman.dy = -6.5;
+        }
+
+        titleStickman.dy += 0.4;
+        titleStickman.y += titleStickman.dy;
+
+        if (titleStickman.y >= GROUND_Y) {
+          titleStickman.y = GROUND_Y;
+          titleStickman.dy = 0;
+        }
+        return;
+      }
+
       if (gameState !== 'playing') return;
       frame++;
 
@@ -290,34 +363,29 @@
         let rand = Math.random();
 
         if (rand < 0.28) {
-          // 穴
           let holeWidth = 50 + Math.floor(Math.random() * 20);
           obstacles.push({ x: V_WIDTH, y: GROUND_Y, w: holeWidth, h: 35, type: 'hole' });
         } else if (rand < 0.6) {
-          // 小型ナイフ（サイズ：22 x 8）
-          let knifeY = Math.random() < 0.5 ? 95 : 125;
+          // 極小ナイフ（15 x 6）
+          let knifeY = Math.random() < 0.5 ? 100 : 130;
           obstacles.push({
             x: V_WIDTH,
             y: knifeY,
-            w: 22,
-            h: 8,
+            w: 15,
+            h: 6,
             angle: 0,
-            rotSpeed: 0.28,
+            rotSpeed: 0.3,
             type: 'knife'
           });
         } else {
-          // サボテン（低・中・高の3パターン）
           let typeRand = Math.random();
           let h, w;
 
           if (typeRand < 0.35) {
-            // 低
             h = 20; w = 14;
           } else if (typeRand < 0.7) {
-            // 中（従来）
             h = 32; w = 20;
           } else {
-            // 高
             h = 44; w = 24;
           }
 
@@ -369,44 +437,47 @@
 
       // オープニング画面描画
       if (gameState === 'title') {
-        // 背景グラデーション風装飾
         ctx.fillStyle = '#fafafa';
         ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
         // 地面ライン
         ctx.strokeStyle = '#222';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, GROUND_Y);
         ctx.lineTo(V_WIDTH, GROUND_Y);
         ctx.stroke();
 
+        // 棒人間の可愛いアクション描画
+        let isGrounded = titleStickman.y >= GROUND_Y;
+        drawStickman(titleStickman.x, titleStickman.y, titleStickman.runFrame, isGrounded, titleStickman.dir);
+
         ctx.textAlign = 'center';
 
-        // メインタイトル「GoStickman」
+        // メインタイトル
         ctx.fillStyle = '#111';
         ctx.font = "900 42px 'Arial Black', Gadget, sans-serif";
-        ctx.fillText("GoStickman", V_WIDTH / 2, 70);
+        ctx.fillText("GoStickman", V_WIDTH / 2, 62);
 
         // キャッチコピー
         ctx.fillStyle = '#666';
         ctx.font = "12px sans-serif";
-        ctx.fillText("RUN & JUMP! AVOID OBSTACLES!", V_WIDTH / 2, 92);
+        ctx.fillText("RUN & JUMP! AVOID OBSTACLES!", V_WIDTH / 2, 82);
 
-        // スタートボタン枠描画
+        // スタートボタン
         let btnX = V_WIDTH / 2 - 65;
-        let btnY = 112;
+        let btnY = 98;
         let btnW = 130;
-        let btnH = 34;
+        let btnH = 32;
 
         ctx.fillStyle = '#111';
         ctx.beginPath();
-        ctx.roundRect(btnX, btnY, btnW, btnH, 17);
+        ctx.roundRect(btnX, btnY, btnW, btnH, 16);
         ctx.fill();
 
         ctx.fillStyle = '#fff';
-        ctx.font = "bold 15px sans-serif";
-        ctx.fillText("START", V_WIDTH / 2, 134);
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText("START", V_WIDTH / 2, 119);
 
         ctx.textAlign = 'left';
         return;
@@ -444,7 +515,8 @@
       }
       ctx.stroke();
 
-      drawPlayer();
+      // プレイ中の棒人間描画
+      drawStickman(player.x, player.y, player.runFrame, player.isGrounded, 1);
 
       obstacles.forEach(obs => {
         if (obs.type === 'knife') {
@@ -454,15 +526,19 @@
         }
       });
 
-      // UI描画 & 10ごとに拍手（👏）を表示
+      // UI描画
       ctx.fillStyle = '#000';
       ctx.font = "bold 14px sans-serif";
 
       let scoreText = "SCORE: " + score;
-      let clapCount = Math.floor(score / 10);
-      let claps = clapCount > 0 ? " " + "👏".repeat(clapCount) : "";
+      ctx.fillText(scoreText, 10, 25);
 
-      ctx.fillText(scoreText + claps, 10, 25);
+      // 10ごとのジャスト（10, 20, 30...）のみ線画の拍手アイコンを表示（11などで即消去）
+      if (score > 0 && score % 10 === 0) {
+        let textWidth = ctx.measureText(scoreText).width;
+        drawLineClapIcon(10 + textWidth + 15, 20);
+      }
+
       ctx.fillText("HI-SCORE: " + highScore, 210, 25);
 
       let remainingJumps = player.maxJumps - player.jumpCount;
@@ -486,7 +562,7 @@
 
         ctx.fillStyle = '#666666';
         ctx.font = "13px sans-serif";
-        ctx.fillText("Restart", V_WIDTH / 2, 148);
+        ctx.fillText("Tap to Title", V_WIDTH / 2, 148);
 
         ctx.textAlign = "left";
       }
@@ -505,7 +581,8 @@
       if (gameState === 'title') {
         resetGame();
       } else if (gameState === 'gameover') {
-        resetGame();
+        // ゲームオーバー後はオープニングタイトルに戻る
+        gameState = 'title';
       } else if (gameState === 'playing') {
         if (player.jumpCount < player.maxJumps) {
           player.dy = (player.jumpCount === 0) ? player.firstJumpPower : player.secondJumpPower;
