@@ -221,26 +221,18 @@
     let score = 0;
     let highScore = localStorage.getItem('stickman_runner_highscore') || 0;
 
-    // 関節つき肢を描画する関数
-    function drawLimb(x, y, rot1, len1, rot2, len2) {
-      let jointX = x + Math.sin(rot1) * len1;
-      let jointY = y + Math.cos(rot1) * len1;
-
-      let endX = jointX + Math.sin(rot1 - rot2) * len2;
-      let endY = jointY + Math.cos(rot1 - rot2) * len2;
+    // 関節なしの1本直線を描画する関数
+    function drawLineLimb(x, y, angle, length) {
+      let endX = x + Math.sin(angle) * length;
+      let endY = y + Math.cos(angle) * length;
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(jointX, jointY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(jointX, jointY, 1.2, 0, Math.PI * 2);
-      ctx.fill();
     }
 
-    // 棒人間描画関数（腕の前後振りを反転）
+    // 関節なし棒人間描画関数
     function drawStickman(x, y, runFrame, isGrounded, dir = 1) {
       ctx.save();
       ctx.translate(x, y);
@@ -270,40 +262,34 @@
       ctx.lineTo(hipX, hipY);
       ctx.stroke();
 
+      let armLen = 13;
+      let legLen = 15;
+
       if (isGrounded) {
         let sinVal = Math.sin(runFrame);
 
-        // 脚の角度と膝の曲がり
-        let legRotR = sinVal * 0.75; 
-        let kneeBendR = (sinVal < 0) ? -sinVal * 1.2 : 0.1;
+        // シンプルな振り子運動（関節なし直線）
+        let legRotR = sinVal * 0.7;
+        let legRotL = -sinVal * 0.7;
 
-        let legRotL = -sinVal * 0.75;
-        let kneeBendL = (sinVal > 0) ? sinVal * 1.2 : 0.1;
-
-        // 腕の動き（脚と対照的に連動するように正負を入れ替え）
-        // 右脚が前（sinVal > 0）のとき、右腕は後ろへ振り出す（正の角度）
-        let armRotR = sinVal * 0.7;
-        let elbowBendR = 0.4 + (sinVal < 0 ? -sinVal * 0.4 : 0);
-
-        // 左腕は逆位相
-        let armRotL = -sinVal * 0.7;
-        let elbowBendL = 0.4 + (sinVal > 0 ? sinVal * 0.4 : 0);
+        let armRotR = sinVal * 0.6;
+        let armRotL = -sinVal * 0.6;
 
         // 奥側の手足
-        drawLimb(shoulderX, shoulderY, armRotL, 7, elbowBendL, 7);
-        drawLimb(hipX, hipY, legRotL, 8, kneeBendL, 8);
+        drawLineLimb(shoulderX, shoulderY, armRotL, armLen);
+        drawLineLimb(hipX, hipY, legRotL, legLen);
 
         // 手前側の手足
-        drawLimb(hipX, hipY, legRotR, 8, kneeBendR, 8);
-        drawLimb(shoulderX, shoulderY, armRotR, 7, elbowBendR, 7);
+        drawLineLimb(hipX, hipY, legRotR, legLen);
+        drawLineLimb(shoulderX, shoulderY, armRotR, armLen);
 
       } else {
-        // ジャンプポーズ
-        drawLimb(hipX, hipY, 0.6, 8, 0.8, 8);   // 前脚
-        drawLimb(hipX, hipY, -0.7, 8, 0.3, 8);  // 後ろ脚
+        // ジャンプポーズ（開脚）
+        drawLineLimb(hipX, hipY, 0.6, legLen);    // 前脚
+        drawLineLimb(hipX, hipY, -0.6, legLen);   // 後ろ脚
 
-        drawLimb(shoulderX, shoulderY, 0.6, 7, 0.5, 7);  // 前腕
-        drawLimb(shoulderX, shoulderY, -0.6, 7, 0.5, 7); // 後ろ腕
+        drawLineLimb(shoulderX, shoulderY, 0.7, armLen);  // 前腕
+        drawLineLimb(shoulderX, shoulderY, -0.7, armLen); // 後ろ腕
       }
 
       ctx.restore();
