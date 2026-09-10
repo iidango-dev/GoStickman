@@ -87,7 +87,6 @@
     function startTitleBGM() {
       if (bgmInterval) return;
       bgmStep = 0;
-      // 軽快な8ビット風のコード・メロディ進行
       const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23]; 
 
       bgmInterval = setInterval(() => {
@@ -167,15 +166,15 @@
       isFallingInHole: false
     };
 
-    // オープニング用棒人間（動く幅を拡大）
+    // オープニング用棒人間
     let titleStickman = {
       x: 60,
       y: GROUND_Y,
       dy: 0,
       dir: 1,
       speed: 2.2,
-      minX: 50,  // 広範囲に動くよう拡大
-      maxX: 430,
+      minX: 40,
+      maxX: 440,
       runFrame: 0,
       jumpTimer: 0
     };
@@ -211,7 +210,7 @@
       ctx.stroke();
 
       if (isGrounded) {
-        // 走りアニメーション（脚と腕の動的な伸縮）
+        // 走りアニメーション
         let legAngle = Math.sin(runFrame) * 12;
         let armAngle = Math.sin(runFrame) * 10;
 
@@ -267,7 +266,7 @@
       }
     }
 
-    // 回転ナイフ描画（極小 15 x 6）
+    // 回転ナイフ描画
     function drawRotatingKnife(obs) {
       ctx.save();
       let centerX = obs.x + obs.w / 2;
@@ -300,7 +299,7 @@
       ctx.restore();
     }
 
-    // 拍手（パチパチ）アイコン描画
+    // 拍手アイコン描画
     function drawLineClapIcon(x, y) {
       ctx.save();
       ctx.translate(x, y);
@@ -343,7 +342,7 @@
       if (gameState === 'title') {
         startTitleBGM();
 
-        // オープニング棒人間の左右広範囲アニメーション
+        // オープニング棒人間の動き
         titleStickman.x += titleStickman.speed * titleStickman.dir;
         titleStickman.runFrame += 0.25;
 
@@ -355,11 +354,11 @@
           titleStickman.dir = 1;
         }
 
-        // 定期的ジャンプ & 効果音再生
+        // ジャンプ高度を文字と被らない低めに調整
         titleStickman.jumpTimer++;
-        if (titleStickman.jumpTimer % 55 === 0 && titleStickman.y >= GROUND_Y) {
-          titleStickman.dy = -6.5;
-          playJumpSound(); // ジャンプ音
+        if (titleStickman.jumpTimer % 65 === 0 && titleStickman.y >= GROUND_Y) {
+          titleStickman.dy = -5.2; 
+          playJumpSound();
         }
 
         titleStickman.dy += 0.4;
@@ -375,7 +374,6 @@
       if (gameState !== 'playing') return;
       frame++;
 
-      // 本編での走りアクション進行（地面にいる時フレーム更新）
       if (player.isGrounded) {
         player.runFrame += 0.3;
       }
@@ -479,7 +477,7 @@
     function draw() {
       ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
 
-      // オープニング画面描画（レイアウト最適化）
+      // オープニング画面描画（完全レイアウト分離）
       if (gameState === 'title') {
         ctx.fillStyle = '#fafafa';
         ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
@@ -492,41 +490,37 @@
         ctx.lineTo(V_WIDTH, GROUND_Y);
         ctx.stroke();
 
-        // 元気に広範囲を走る棒人間描画
+        // 棒人間描画
         let isGrounded = titleStickman.y >= GROUND_Y;
         drawStickman(titleStickman.x, titleStickman.y, titleStickman.runFrame, isGrounded, titleStickman.dir);
 
         ctx.textAlign = 'center';
 
-        // 位置とサイズを微調整（上部に寄せて被りを回避）
+        // タイトル文字（上部にしっかり固定）
         ctx.fillStyle = '#111';
-        ctx.font = "900 36px 'Arial Black', Gadget, sans-serif";
-        ctx.fillText("GoStickman", V_WIDTH / 2, 48);
+        ctx.font = "900 32px 'Arial Black', Gadget, sans-serif";
+        ctx.fillText("GoStickman", V_WIDTH / 2, 35);
 
-        ctx.fillStyle = '#666';
-        ctx.font = "11px sans-serif";
-        ctx.fillText("RUN & JUMP! AVOID OBSTACLES!", V_WIDTH / 2, 66);
-
-        // コンパクトなスタートボタン
-        let btnX = V_WIDTH / 2 - 55;
-        let btnY = 78;
-        let btnW = 110;
-        let btnH = 28;
+        // スタートボタン（タイトル直下に近接配置し、下部エリアを棒人間のために確保）
+        let btnX = V_WIDTH / 2 - 50;
+        let btnY = 52;
+        let btnW = 100;
+        let btnH = 26;
 
         ctx.fillStyle = '#111';
         ctx.beginPath();
-        ctx.roundRect(btnX, btnY, btnW, btnH, 14);
+        ctx.roundRect(btnX, btnY, btnW, btnH, 13);
         ctx.fill();
 
         ctx.fillStyle = '#fff';
-        ctx.font = "bold 13px sans-serif";
-        ctx.fillText("START", V_WIDTH / 2, 97);
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText("START", V_WIDTH / 2, 69);
 
         ctx.textAlign = 'left';
         return;
       }
 
-      // 本編：地面と穴の描画
+      // 本編描画
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -558,7 +552,7 @@
       }
       ctx.stroke();
 
-      // 本編プレイヤー描画（走りアクション有効化）
+      // プレイヤー描画
       drawStickman(player.x, player.y, player.runFrame, player.isGrounded, 1);
 
       obstacles.forEach(obs => {
