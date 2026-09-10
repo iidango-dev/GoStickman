@@ -222,8 +222,6 @@
     let highScore = localStorage.getItem('stickman_runner_highscore') || 0;
 
     // 関節つき肢を描画する関数
-    // rot1: 上腕・大腿の角度（0が垂直下方、正が前方、負が後方）
-    // rot2: 肘・膝の屈曲角度（正が進行方向の後ろへ折れ曲がる）
     function drawLimb(x, y, rot1, len1, rot2, len2) {
       let jointX = x + Math.sin(rot1) * len1;
       let jointY = y + Math.cos(rot1) * len1;
@@ -242,7 +240,7 @@
       ctx.fill();
     }
 
-    // 棒人間描画関数（体を傾けない仕様）
+    // 棒人間描画関数（腕の前後振りを反転）
     function drawStickman(x, y, runFrame, isGrounded, dir = 1) {
       ctx.save();
       ctx.translate(x, y);
@@ -254,7 +252,6 @@
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      // 垂直の姿勢（回転傾きなし）
       let headX = 0;
       let headY = -32;
       let hipX = 0;
@@ -283,14 +280,14 @@
         let legRotL = -sinVal * 0.75;
         let kneeBendL = (sinVal > 0) ? sinVal * 1.2 : 0.1;
 
-        // 腕の角度と肘の曲がり（腕を前後に振り子動作させる）
-        // 右腕：右脚が前に出る時に腕は後ろ（sinValが正の時に負の角度）
-        let armRotR = -sinVal * 0.7;
-        let elbowBendR = 0.4 + (sinVal > 0 ? sinVal * 0.4 : 0);
+        // 腕の動き（脚と対照的に連動するように正負を入れ替え）
+        // 右脚が前（sinVal > 0）のとき、右腕は後ろへ振り出す（正の角度）
+        let armRotR = sinVal * 0.7;
+        let elbowBendR = 0.4 + (sinVal < 0 ? -sinVal * 0.4 : 0);
 
-        // 左腕：右脚と逆位相
-        let armRotL = sinVal * 0.7;
-        let elbowBendL = 0.4 + (sinVal < 0 ? -sinVal * 0.4 : 0);
+        // 左腕は逆位相
+        let armRotL = -sinVal * 0.7;
+        let elbowBendL = 0.4 + (sinVal > 0 ? sinVal * 0.4 : 0);
 
         // 奥側の手足
         drawLimb(shoulderX, shoulderY, armRotL, 7, elbowBendL, 7);
@@ -305,8 +302,8 @@
         drawLimb(hipX, hipY, 0.6, 8, 0.8, 8);   // 前脚
         drawLimb(hipX, hipY, -0.7, 8, 0.3, 8);  // 後ろ脚
 
-        drawLimb(shoulderX, shoulderY, -0.6, 7, 0.5, 7); // 前腕
-        drawLimb(shoulderX, shoulderY, 0.6, 7, 0.5, 7);  // 後ろ腕
+        drawLimb(shoulderX, shoulderY, 0.6, 7, 0.5, 7);  // 前腕
+        drawLimb(shoulderX, shoulderY, -0.6, 7, 0.5, 7); // 後ろ腕
       }
 
       ctx.restore();
