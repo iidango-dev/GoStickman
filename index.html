@@ -36,13 +36,12 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 内部仮想解像度（基準比率）
+    // 仮想画面サイズ
     const V_WIDTH = 480;
     const V_HEIGHT = 200;
     const GROUND_Y = 160;
 
     function resizeCanvas() {
-      // 画面全体にキャンバスをフィットさせる（デバイスピクセル比対応）
       const dpr = window.devicePixelRatio || 1;
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
@@ -53,7 +52,7 @@
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', resizeCanvas);
 
-    // プレイヤー（棒人間）状態
+    // プレイヤー状態
     let player = {
       x: 60,
       y: GROUND_Y,
@@ -149,12 +148,12 @@
       }
     }
 
-    // 回転する飛んでくるナイフ描画
+    // 回転するナイフの描画（中心軸回転）
     function drawRotatingKnife(obs) {
       ctx.save();
-      // ナイフの中心に座標を移動して回転
       let centerX = obs.x + obs.w / 2;
       let centerY = obs.y + obs.h / 2;
+      
       ctx.translate(centerX, centerY);
       ctx.rotate(obs.angle);
 
@@ -165,19 +164,16 @@
       let w = obs.w;
       let h = obs.h;
 
-      // 刃
+      // 刃の描画
       ctx.beginPath();
       ctx.moveTo(-w / 2, 0);
-      ctx.lineTo(w / 4, -h / 2);
-      ctx.lineTo(w / 4, h / 2);
+      ctx.lineTo(0, -h / 2);
+      ctx.lineTo(0, h / 2);
       ctx.closePath();
       ctx.fill();
 
-      // 柄（持ち手）
-      ctx.fillRect(w / 4, -h / 4, w / 4, h / 2);
-      // 柄頭
-      ctx.fillRect(w / 2 - 2, -h / 3, 2, (h * 2) / 3);
-
+      // 柄（持ち手）の描画
+      ctx.fillRect(0, -h / 4, w / 2, h / 2);
       ctx.restore();
     }
 
@@ -185,7 +181,7 @@
       if (gameOver) return;
       frame++;
 
-      // 現在の足元に穴があるかチェック
+      // 足元に凹状態の穴（hole）があるか判定
       let inHole = obstacles.some(obs => 
         obs.type === 'hole' && (player.x >= obs.x && player.x <= obs.x + obs.w)
       );
@@ -199,10 +195,10 @@
         player.isGrounded = true;
         player.jumpCount = 0;
       } else if (inHole && player.y >= GROUND_Y) {
-        player.isGrounded = false;
+        player.isGrounded = false; // 穴の上では着地できない
       }
 
-      // 穴に落ちた場合の判定（画面下に消えたらゲームオーバー）
+      // 穴に落下して画面外に消えた場合
       if (player.y > V_HEIGHT + 40) {
         triggerGameOver();
       }
@@ -210,23 +206,24 @@
       let gameSpeed = 5 + Math.floor(score / 5) * 0.6;
       let spawnInterval = Math.max(50, 95 - Math.floor(score / 4) * 4);
 
+      // 障害物の生成（穴、回転ナイフ、サボテンのみ）
       if (frame % spawnInterval === 0) {
         let rand = Math.random();
 
         if (rand < 0.3) {
-          // 飛び越えなければならない穴
-          let holeWidth = 45 + Math.floor(Math.random() * 20);
-          obstacles.push({ x: V_WIDTH, y: GROUND_Y, w: holeWidth, h: 50, type: 'hole' });
+          // 凹型の穴（幅50〜70px、深さ35px）
+          let holeWidth = 50 + Math.floor(Math.random() * 20);
+          obstacles.push({ x: V_WIDTH, y: GROUND_Y, w: holeWidth, h: 35, type: 'hole' });
         } else if (rand < 0.65) {
-          // 回転するナイフ（ジャンプで避ける / そのまま潜り抜けられる高度）
-          let knifeY = Math.random() < 0.5 ? 95 : 125;
+          // 回転しながら横移動するナイフ
+          let knifeY = Math.random() < 0.5 ? 90 : 120;
           obstacles.push({ 
             x: V_WIDTH, 
             y: knifeY, 
-            w: 26, 
+            w: 28, 
             h: 12, 
             angle: 0, 
-            rotSpeed: 0.2, 
+            rotSpeed: 0.25, // 回転スピード
             type: 'knife' 
           });
         } else {
@@ -240,11 +237,12 @@
         let obs = obstacles[i];
         obs.x -= gameSpeed;
 
+        // ナイフの回転処理
         if (obs.type === 'knife') {
-          obs.angle += obs.rotSpeed; // 回転アニメーション
+          obs.angle += obs.rotSpeed;
         }
 
-        // 穴以外の当たり判定
+        // 当たり判定（穴以外）
         if (obs.type !== 'hole') {
           let pLeft = player.x - 6;
           let pRight = player.x + 6;
@@ -261,7 +259,8 @@
           }
         }
 
-        if (obs.x < -60) {
+        // 画面外削除
+        if (obs.x < -80) {
           obstacles.splice(i, 1);
           score++;
         }
@@ -279,7 +278,7 @@
     function draw() {
       ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
 
-      // 地面と穴の描画
+      // 地面と凹型の穴の描画
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -288,19 +287,26 @@
       let holes = obstacles.filter(o => o.type === 'hole').sort((a, b) => a.x - b.x);
 
       holes.forEach(hole => {
+        // 穴の手前までの地面
         if (hole.x > currentX) {
           ctx.moveTo(currentX, GROUND_Y);
           ctx.lineTo(Math.min(hole.x, V_WIDTH), GROUND_Y);
         }
-        // 穴の垂直な壁線を描画
-        ctx.moveTo(Math.max(0, hole.x), GROUND_Y);
-        ctx.lineTo(Math.max(0, hole.x), GROUND_Y + 30);
-        ctx.moveTo(Math.min(V_WIDTH, hole.x + hole.w), GROUND_Y);
-        ctx.lineTo(Math.min(V_WIDTH, hole.x + hole.w), GROUND_Y + 30);
 
-        currentX = Math.max(currentX, hole.x + hole.w);
+        // 凹形状（左壁 -> 穴の底 -> 右壁）を描画
+        let leftX = hole.x;
+        let rightX = hole.x + hole.w;
+        let bottomY = GROUND_Y + hole.h;
+
+        ctx.moveTo(leftX, GROUND_Y);
+        ctx.lineTo(leftX, bottomY);
+        ctx.lineTo(rightX, bottomY);
+        ctx.lineTo(rightX, GROUND_Y);
+
+        currentX = Math.max(currentX, rightX);
       });
 
+      // 最後の穴から右端までの地面
       if (currentX < V_WIDTH) {
         ctx.moveTo(currentX, GROUND_Y);
         ctx.lineTo(V_WIDTH, GROUND_Y);
@@ -309,6 +315,7 @@
 
       drawPlayer();
 
+      // 障害物の描画
       obstacles.forEach(obs => {
         if (obs.type === 'knife') {
           drawRotatingKnife(obs);
