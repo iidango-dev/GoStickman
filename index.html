@@ -85,7 +85,7 @@
       } catch (e) {}
     }
 
-    // BGMの1音を鳴らすループ（可変テンポ対応）
+    // BGMの1音を鳴らすループ
     function tickBGM() {
       if (!audioCtx) return;
 
@@ -221,32 +221,28 @@
     let score = 0;
     let highScore = localStorage.getItem('stickman_runner_highscore') || 0;
 
-    // 関節つき肢（腕・脚）を描画する補助関数
-    // x, y: 付け根座標
-    // rot1: 大腿/上腕の角度（正が前方）
-    // len1: 腿/上腕の長さ
-    // rot2: 膝/肘の曲がり角度（正が後ろへ曲げる）
-    // len2: 脛/前腕の長さ
+    // 関節つき肢を描画する関数
+    // rot1: 上腕・大腿の角度（0が垂直下方、正が前方、負が後方）
+    // rot2: 肘・膝の屈曲角度（正が進行方向の後ろへ折れ曲がる）
     function drawLimb(x, y, rot1, len1, rot2, len2) {
-      // 進行方向（右）を基準とした座標計算
-      let kneeX = x + Math.sin(rot1) * len1;
-      let kneeY = y + Math.cos(rot1) * len1;
+      let jointX = x + Math.sin(rot1) * len1;
+      let jointY = y + Math.cos(rot1) * len1;
 
-      let footX = kneeX + Math.sin(rot1 - rot2) * len2;
-      let footY = kneeY + Math.cos(rot1 - rot2) * len2;
+      let endX = jointX + Math.sin(rot1 - rot2) * len2;
+      let endY = jointY + Math.cos(rot1 - rot2) * len2;
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(kneeX, kneeY);
-      ctx.lineTo(footX, footY);
+      ctx.lineTo(jointX, jointY);
+      ctx.lineTo(endX, endY);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.arc(kneeX, kneeY, 1.2, 0, Math.PI * 2);
+      ctx.arc(jointX, jointY, 1.2, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 関節つき棒人間描画関数（前走り動作修正版）
+    // 棒人間描画関数（体を傾けない仕様）
     function drawStickman(x, y, runFrame, isGrounded, dir = 1) {
       ctx.save();
       ctx.translate(x, y);
@@ -258,15 +254,12 @@
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      // 前傾姿勢をつけて躍動感を出す
-      let lean = isGrounded ? 0.15 : 0.05;
-      ctx.rotate(lean);
-
+      // 垂直の姿勢（回転傾きなし）
       let headX = 0;
       let headY = -32;
-      let hipX = -2;
+      let hipX = 0;
       let hipY = -12;
-      let shoulderX = 1;
+      let shoulderX = 0;
       let shoulderY = -24;
 
       // 頭
@@ -281,25 +274,25 @@
       ctx.stroke();
 
       if (isGrounded) {
-        // 正しい前走りアニメーションの位相制御
         let sinVal = Math.sin(runFrame);
-        let cosVal = Math.cos(runFrame);
 
-        // 脚（正の角度＝前方に振り出し）
-        let legRotR = sinVal * 0.7; 
-        let kneeBendR = (sinVal < 0) ? -sinVal * 1.1 : 0.1; // 後ろへ蹴り上げて前に戻す時に膝を曲げる
+        // 脚の角度と膝の曲がり
+        let legRotR = sinVal * 0.75; 
+        let kneeBendR = (sinVal < 0) ? -sinVal * 1.2 : 0.1;
 
-        let legRotL = -sinVal * 0.7;
-        let kneeBendL = (sinVal > 0) ? sinVal * 1.1 : 0.1;
+        let legRotL = -sinVal * 0.75;
+        let kneeBendL = (sinVal > 0) ? sinVal * 1.2 : 0.1;
 
-        // 腕（足と逆位相で振る）
-        let armRotR = -sinVal * 0.65;
-        let elbowBendR = 0.5 + Math.abs(sinVal) * 0.3; // 肘は常に軽く前に曲げる
+        // 腕の角度と肘の曲がり（腕を前後に振り子動作させる）
+        // 右腕：右脚が前に出る時に腕は後ろ（sinValが正の時に負の角度）
+        let armRotR = -sinVal * 0.7;
+        let elbowBendR = 0.4 + (sinVal > 0 ? sinVal * 0.4 : 0);
 
-        let armRotL = sinVal * 0.65;
-        let elbowBendL = 0.5 + Math.abs(sinVal) * 0.3;
+        // 左腕：右脚と逆位相
+        let armRotL = sinVal * 0.7;
+        let elbowBendL = 0.4 + (sinVal < 0 ? -sinVal * 0.4 : 0);
 
-        // 奥側の手足を先に描画
+        // 奥側の手足
         drawLimb(shoulderX, shoulderY, armRotL, 7, elbowBendL, 7);
         drawLimb(hipX, hipY, legRotL, 8, kneeBendL, 8);
 
@@ -308,12 +301,12 @@
         drawLimb(shoulderX, shoulderY, armRotR, 7, elbowBendR, 7);
 
       } else {
-        // 前進ジャンプのポーズ
-        drawLimb(hipX, hipY, 0.6, 8, 0.8, 8);   // 前脚（前に出して曲げる）
-        drawLimb(hipX, hipY, -0.7, 8, 0.3, 8);  // 後ろ脚（後ろへ伸ばす）
+        // ジャンプポーズ
+        drawLimb(hipX, hipY, 0.6, 8, 0.8, 8);   // 前脚
+        drawLimb(hipX, hipY, -0.7, 8, 0.3, 8);  // 後ろ脚
 
-        drawLimb(shoulderX, shoulderY, -0.8, 7, 0.6, 7); // 前腕
-        drawLimb(shoulderX, shoulderY, 0.7, 7, 0.6, 7);  // 後ろ腕
+        drawLimb(shoulderX, shoulderY, -0.6, 7, 0.5, 7); // 前腕
+        drawLimb(shoulderX, shoulderY, 0.6, 7, 0.5, 7);  // 後ろ腕
       }
 
       ctx.restore();
@@ -372,7 +365,7 @@
       ctx.restore();
     }
 
-    // 黒色の王冠（Crown）アイコン描画
+    // 王冠アイコン描画
     function drawCrownIcon(x, y) {
       ctx.save();
       ctx.translate(x, y);
@@ -453,14 +446,11 @@
       startGameBGM();
       frame++;
 
-      // スコア10毎のスクロール速度の計算 (初期値: 3.0, 10毎に+0.8)
       let speedLevel = Math.floor(score / 10);
       let gameSpeed = 3.0 + speedLevel * 0.8;
 
-      // スクロールスピードに連動してBGMのテンポを加速
       currentBgmInterval = Math.max(55, 125 - speedLevel * 10);
 
-      // 走りアニメーションの速度同期
       if (player.isGrounded) {
         player.runFrame += gameSpeed * 0.055;
       }
@@ -564,12 +554,10 @@
     function draw() {
       ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
 
-      // オープニング画面描画
       if (gameState === 'title') {
         ctx.fillStyle = '#fafafa';
         ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-        // 地面
         ctx.strokeStyle = '#222';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -577,18 +565,15 @@
         ctx.lineTo(V_WIDTH, GROUND_Y);
         ctx.stroke();
 
-        // 棒人間描画
         let isGrounded = titleStickman.y >= GROUND_Y;
         drawStickman(titleStickman.x, titleStickman.y, titleStickman.runFrame, isGrounded, titleStickman.dir);
 
         ctx.textAlign = 'center';
 
-        // タイトル文字
         ctx.fillStyle = '#111';
         ctx.font = "900 32px 'Arial Black', Gadget, sans-serif";
         ctx.fillText("GoStickman", V_WIDTH / 2, 35);
 
-        // スタートボタン
         let btnX = V_WIDTH / 2 - 50;
         let btnY = 52;
         let btnW = 100;
@@ -607,7 +592,6 @@
         return;
       }
 
-      // 本編描画
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -639,7 +623,6 @@
       }
       ctx.stroke();
 
-      // プレイヤー描画
       drawStickman(player.x, player.y, player.runFrame, player.isGrounded, 1);
 
       obstacles.forEach(obs => {
@@ -650,7 +633,6 @@
         }
       });
 
-      // UI描画
       ctx.fillStyle = '#000';
       ctx.font = "bold 14px sans-serif";
 
@@ -668,7 +650,6 @@
       ctx.font = "12px sans-serif";
       ctx.fillText("JUMP: " + "★".repeat(Math.max(0, remainingJumps)), 390, 25);
 
-      // ゲームオーバー描画
       if (gameState === 'gameover') {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
         ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
