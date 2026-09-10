@@ -1,63 +1,48 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Stickman Runner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Stickman Cactus & Knife Runner</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden; /* スクロールを禁止 */
+      text-align: center;
       background: #fff;
-      touch-action: none; /* スマホの操作によるバウンスやズームを防止 */
+      touch-action: none;
       -webkit-user-select: none;
       user-select: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: sans-serif;
     }
     canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
+      border: 2px solid #000;
       background: #fff;
+      margin-top: 10px;
+      max-width: 95%;
+      height: auto;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <canvas id="gameCanvas" width="480" height="200"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 画面サイズ設定
-    let groundY = 0;
+    const GROUND_Y = 160;
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      groundY = canvas.height * 0.8; // 地面の位置を画面下部（80%の位置）に設定
-      if (player.isGrounded) {
-        player.y = groundY;
-      }
-    }
-
-    // プレイヤー状態
     let player = {
       x: 60,
-      y: 0,
+      y: GROUND_Y,
       dy: 0,
-      gravity: 0.6,
-      firstJumpPower: -12,
-      secondJumpPower: -13,
+      gravity: 0.5,
+      firstJumpPower: -9,
+      secondJumpPower: -10,
       isGrounded: false,
       jumpCount: 0,
       maxJumps: 2,
-      runFrame: 0
+      runFrame: 0,
+      isStoppedByFalling: false // 落下物に当たって停止したフラグ
     };
 
     let obstacles = [];
@@ -66,69 +51,64 @@
     let highScore = localStorage.getItem('stickman_cactus_highscore') || 0;
     let gameOver = false;
 
-    // 初期リサイズ実行
-    resizeCanvas();
-    player.y = groundY;
-    window.addEventListener('resize', resizeCanvas);
-
     // 棒人間描画
     function drawPlayer() {
       ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
       let headX = player.x;
-      let headY = player.y - 35;
+      let headY = player.y - 30;
 
       // 頭
       ctx.beginPath();
-      ctx.arc(headX, headY, 9, 0, Math.PI * 2);
+      ctx.arc(headX, headY, 7, 0, Math.PI * 2);
       ctx.stroke();
 
       // 体
       ctx.beginPath();
-      ctx.moveTo(headX, headY + 9);
-      ctx.lineTo(headX, player.y - 10);
+      ctx.moveTo(headX, headY + 7);
+      ctx.lineTo(headX, player.y - 8);
       ctx.stroke();
 
-      if (player.isGrounded) {
+      if (player.isGrounded && !player.isStoppedByFalling) {
         player.runFrame += 0.25;
-        let legAngle = Math.sin(player.runFrame) * 14;
-        let armAngle = Math.sin(player.runFrame) * 12;
+        let legAngle = Math.sin(player.runFrame) * 12;
+        let armAngle = Math.sin(player.runFrame) * 10;
 
         // 脚
         ctx.beginPath();
-        ctx.moveTo(headX, player.y - 10);
+        ctx.moveTo(headX, player.y - 8);
         ctx.lineTo(headX - legAngle, player.y);
-        ctx.moveTo(headX, player.y - 10);
+        ctx.moveTo(headX, player.y - 8);
         ctx.lineTo(headX + legAngle, player.y);
         ctx.stroke();
 
         // 腕
         ctx.beginPath();
-        ctx.moveTo(headX, headY + 15);
-        ctx.lineTo(headX + armAngle, headY + 25);
-        ctx.moveTo(headX, headY + 15);
-        ctx.lineTo(headX - armAngle, headY + 25);
+        ctx.moveTo(headX, headY + 12);
+        ctx.lineTo(headX + armAngle, headY + 20);
+        ctx.moveTo(headX, headY + 12);
+        ctx.lineTo(headX - armAngle, headY + 20);
         ctx.stroke();
       } else {
-        // ジャンプポーズ
+        // ジャンプポーズ または 停止ポーズ
         ctx.beginPath();
-        ctx.moveTo(headX, player.y - 10);
-        ctx.lineTo(headX - 8, player.y - 2);
-        ctx.lineTo(headX - 12, player.y + 5);
+        ctx.moveTo(headX, player.y - 8);
+        ctx.lineTo(headX - 6, player.y - 2);
+        ctx.lineTo(headX - 10, player.y + 4);
 
-        ctx.moveTo(headX, player.y - 10);
-        ctx.lineTo(headX + 8, player.y - 4);
-        ctx.lineTo(headX + 10, player.y + 3);
+        ctx.moveTo(headX, player.y - 8);
+        ctx.lineTo(headX + 6, player.y - 4);
+        ctx.lineTo(headX + 8, player.y + 2);
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.moveTo(headX, headY + 15);
-        ctx.lineTo(headX - 12, headY + 8);
-        ctx.moveTo(headX, headY + 15);
-        ctx.lineTo(headX + 12, headY + 8);
+        ctx.moveTo(headX, headY + 12);
+        ctx.lineTo(headX - 10, headY + 5);
+        ctx.moveTo(headX, headY + 12);
+        ctx.lineTo(headX + 10, headY + 5);
         ctx.stroke();
       }
     }
@@ -136,154 +116,197 @@
     // サボテン描画
     function drawCactus(obs) {
       ctx.fillStyle = '#000';
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-
       ctx.fillRect(obs.x + obs.w * 0.35, obs.y, obs.w * 0.3, obs.h);
-
-      if (obs.h >= 30) {
+      if (obs.h >= 25) {
         ctx.fillRect(obs.x, obs.y + obs.h * 0.3, obs.w * 0.4, obs.h * 0.12);
         ctx.fillRect(obs.x, obs.y + obs.h * 0.15, obs.w * 0.12, obs.h * 0.25);
-
         ctx.fillRect(obs.x + obs.w * 0.6, obs.y + obs.h * 0.45, obs.w * 0.4, obs.h * 0.12);
         ctx.fillRect(obs.x + obs.w * 0.88, obs.y + obs.h * 0.25, obs.w * 0.12, obs.h * 0.25);
       }
     }
 
-    // 飛んでくるナイフ描画
+    // ナイフ描画
     function drawKnife(obs) {
       ctx.fillStyle = '#000';
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-
-      let x = obs.x;
-      let y = obs.y;
-
+      let x = obs.x, y = obs.y;
       ctx.beginPath();
-      ctx.moveTo(x, y + 8);
-      ctx.lineTo(x + 22, y + 1);
-      ctx.lineTo(x + 22, y + 15);
+      ctx.moveTo(x, y + 6);
+      ctx.lineTo(x + 18, y + 1);
+      ctx.lineTo(x + 18, y + 11);
       ctx.closePath();
       ctx.fill();
+      ctx.fillRect(x + 18, y + 4, 8, 4);
+      ctx.fillRect(x + 26, y + 3, 2, 6);
+    }
 
-      ctx.fillRect(x + 22, y + 5, 10, 5);
-      ctx.fillRect(x + 32, y + 3, 3, 9);
+    // ３：空からの落下物（岩）を描画
+    function drawFallingRock(obs) {
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(obs.x + obs.w / 2, obs.y + obs.h / 2, obs.w / 2, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function update() {
       if (gameOver) return;
       frame++;
 
+      // ２：現在の足下に窪み（ pit ）があるか検出
+      let onPit = obstacles.some(obs => 
+        obs.type === 'pit' && (player.x >= obs.x && player.x <= obs.x + obs.w)
+      );
+
       player.dy += player.gravity;
       player.y += player.dy;
 
-      if (player.y >= groundY) {
-        player.y = groundY;
+      // 窪みの部分では着地処理を行わず下に落下させる
+      if (!onPit && player.y >= GROUND_Y) {
+        player.y = GROUND_Y;
         player.dy = 0;
         player.isGrounded = true;
         player.jumpCount = 0;
+      } else if (onPit && player.y >= GROUND_Y) {
+        player.isGrounded = false;
       }
 
-      let gameSpeed = 6 + Math.floor(score / 5) * 0.7;
-      let spawnInterval = Math.max(45, 90 - Math.floor(score / 4) * 4);
+      // 画面下に完全に落ちたらゲームオーバー
+      if (player.y > canvas.height + 50) {
+        triggerGameOver();
+      }
 
+      let gameSpeed = 5 + Math.floor(score / 5) * 0.6;
+      let spawnInterval = Math.max(50, 95 - Math.floor(score / 4) * 4);
+
+      // 障害物の生成
       if (frame % spawnInterval === 0) {
-        let isKnife = score >= 5 && Math.random() < 0.35;
-
-        if (isKnife) {
-          // ナイフ（高さは画面サイズ基準）
-          let knifeY = groundY - (Math.random() < 0.5 ? 80 : 50);
-          obstacles.push({ x: canvas.width, y: knifeY, w: 35, h: 16, type: 'knife' });
+        let rand = Math.random();
+        if (rand < 0.25 && score >= 3) {
+          // ２：地面の窪み
+          obstacles.push({ x: canvas.width, y: GROUND_Y, w: 50, h: 40, type: 'pit' });
+        } else if (rand < 0.50 && score >= 5) {
+          // ３：空からの落下物（プレイヤーの直上付近を目指して落下）
+          obstacles.push({ 
+            x: player.x + Math.random() * 60 - 20, 
+            y: -20, 
+            w: 20, 
+            h: 20, 
+            vy: 3 + Math.random() * 2, 
+            type: 'falling' 
+          });
+        } else if (rand < 0.75 && score >= 5) {
+          // 横飛ナイフ
+          let knifeY = Math.random() < 0.5 ? 90 : 115;
+          obstacles.push({ x: canvas.width, y: knifeY, w: 28, h: 12, type: 'knife' });
         } else {
           // サボテン
-          let cactusType = Math.random();
-          let h, w;
-          if (cactusType < 0.3) {
-            h = 55; w = 28;
-          } else if (cactusType < 0.7) {
-            h = 40; w = 24;
-          } else {
-            h = 28; w = 18;
-          }
-          obstacles.push({ x: canvas.width, y: groundY - h, w: w, h: h, type: 'cactus' });
+          let h = 32, w = 20;
+          obstacles.push({ x: canvas.width, y: GROUND_Y - h, w: w, h: h, type: 'cactus' });
         }
       }
 
+      // 障害物の移動と当たり判定
       for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].x -= gameSpeed;
+        let obs = obstacles[i];
 
-        let pLeft = player.x - 8;
-        let pRight = player.x + 8;
-        let pTop = player.y - 42;
-        let pBottom = player.y;
+        if (obs.type === 'falling') {
+          obs.y += obs.vy; // 落下物は下方向に進行
+        } else {
+          obs.x -= gameSpeed; // それ以外は左方向にスクロール
+        }
 
-        let oLeft = obstacles[i].x;
-        let oRight = obstacles[i].x + obstacles[i].w;
-        let oTop = obstacles[i].y;
-        let oBottom = obstacles[i].y + obstacles[i].h;
+        // 窪み以外の当たり判定処理
+        if (obs.type !== 'pit') {
+          let pLeft = player.x - 6;
+          let pRight = player.x + 6;
+          let pTop = player.y - 35;
+          let pBottom = player.y;
 
-        if (pRight > oLeft && pLeft < oRight && pBottom > oTop && pTop < oBottom) {
-          gameOver = true;
-          if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('stickman_cactus_highscore', highScore);
+          let oLeft = obs.x;
+          let oRight = obs.x + obs.w;
+          let oTop = obs.y;
+          let oBottom = obs.y + obs.h;
+
+          if (pRight > oLeft && pLeft < oRight && pBottom > oTop && pTop < oBottom) {
+            // ４：落下物が当たった場合は足を止めて判定
+            if (obs.type === 'falling') {
+              player.isStoppedByFalling = true;
+            }
+            triggerGameOver();
           }
         }
 
-        if (obstacles[i].x < -40) {
+        // 画面外削除判定
+        if (obs.x < -60 || obs.y > canvas.height + 20) {
           obstacles.splice(i, 1);
           score++;
         }
       }
     }
 
+    function triggerGameOver() {
+      gameOver = true;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('stickman_cactus_highscore', highScore);
+      }
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 地面
+      // 地面と窪みの描画
       ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, groundY);
-      ctx.lineTo(canvas.width, groundY);
+      
+      let currentX = 0;
+      // 窪み（pit）の領域を避けて地面の線を引く
+      let pits = obstacles.filter(o => o.type === 'pit').sort((a, b) => a.x - b.x);
+
+      pits.forEach(pit => {
+        if (pit.x > currentX) {
+          ctx.moveTo(currentX, GROUND_Y);
+          ctx.lineTo(Math.min(pit.x, canvas.width), GROUND_Y);
+        }
+        currentX = Math.max(currentX, pit.x + pit.w);
+      });
+
+      if (currentX < canvas.width) {
+        ctx.moveTo(currentX, GROUND_Y);
+        ctx.lineTo(canvas.width, GROUND_Y);
+      }
       ctx.stroke();
 
       drawPlayer();
 
+      // 各障害物の描画
       obstacles.forEach(obs => {
-        if (obs.type === 'knife') {
-          drawKnife(obs);
-        } else {
-          drawCactus(obs);
-        }
+        if (obs.type === 'knife') drawKnife(obs);
+        else if (obs.type === 'cactus') drawCactus(obs);
+        else if (obs.type === 'falling') drawFallingRock(obs);
       });
 
-      // UI
+      // UI描画
       ctx.fillStyle = '#000';
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillText("SCORE: " + score, 15, 35);
-      ctx.fillText("HI-SCORE: " + highScore, 140, 35);
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText("SCORE: " + score, 10, 25);
+      ctx.fillText("HI-SCORE: " + highScore, 130, 25);
 
       let remainingJumps = player.maxJumps - player.jumpCount;
-      ctx.font = "14px sans-serif";
-      ctx.fillText("JUMP: " + "★".repeat(remainingJumps), canvas.width - 110, 35);
+      ctx.font = "12px sans-serif";
+      ctx.fillText("JUMP: " + "★".repeat(Math.max(0, remainingJumps)), 380, 25);
 
-      // ゲームオーバー画面
       if (gameOver) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillText("GAME OVER", 170, 80);
 
-        ctx.font = "bold 28px sans-serif";
-        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 30);
-
-        ctx.font = "18px sans-serif";
-        ctx.fillText("Score: " + score + "  (Best: " + highScore + ")", canvas.width / 2, canvas.height / 2 + 10);
-        ctx.fillText("Tap to Restart", canvas.width / 2, canvas.height / 2 + 50);
-
-        ctx.textAlign = 'left'; // 描画設定をデフォルトに戻す
+        ctx.font = "15px sans-serif";
+        ctx.fillText("Score: " + score + "  (Best: " + highScore + ")", 160, 110);
+        ctx.fillText("Tap to Restart", 185, 145);
       }
     }
 
@@ -300,10 +323,11 @@
         obstacles = [];
         score = 0;
         frame = 0;
-        player.y = groundY;
+        player.y = GROUND_Y;
         player.dy = 0;
         player.isGrounded = true;
         player.jumpCount = 0;
+        player.isStoppedByFalling = false;
         gameOver = false;
       } else {
         if (player.jumpCount < player.maxJumps) {
